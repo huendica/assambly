@@ -4,9 +4,46 @@
 
 cd /mnt/Timina/lmorales/Public/ymez
 sapas=$(cut -d , -f2 data/metadata/sapa104_SinClonas_From_sapa141.csv | grep -v ID)
-sapasam=$(for i in $sapas; do ls /mnt/Timina/lmorales/Public/ymez/data/assemblies | grep $i; done)
+sapasam=$(for i in $sapas; do ls /mnt/Timina/lmorales/Public/ymez/data/assemblies | grep $i; done) #las que tienen ensamble
 
 # creo un dataframe con los 76 los genomas que falta ensamblar
 grep -vf <(printf "%s\n" "${sapasam[@]}") data/metadata/sapa104_SinClonas_From_sapa141.csv >> data/metadata/sapa76_ToAssam_from_sapa104.csv
 
+#Verifico que genomas están ensamblados con SPADEs
+
+sapaspades=$(for i in $sapas; do ls bin/SGE/07_assemblies/ | grep $i | grep spades; done | cut -d _ -f1) #las que tienen script de spades
+
+#Ahora hago un nuevo dataframe de sapa con las 104 menos las 15 que ya están ensambladas por spades
+
+grep -vf <(printf "%s\n" "${sapaspades[@]}") data/metadata/sapa104_SinClonas_From_sapa141.csv >> data/
+metadata/sapa89_ToSpades_from_sapa104.csv
+
+cd bin/scripts/07_assemblies/
+
+module load python37/3.7.0
+
+python3.7 assembly.py -a spades -s /mnt/Timina/lmorales/Public/ymez/data/metadata/sapa89_ToSpades_from_sapa104.csv
+
+exit
+
+cd /mnt/Timina/lmorales/Public/ymez/bin/SGE/07_assemblies
+bash clopezg_SH_assembly.sh
+
+####
+
+qstat | grep 2023 -c # hubo 3 de los 86 genomas que tuvieron un error
+
+XB077c1
+XB007c9
+XA096c3
+
+== Error ==  file not found: /mnt/Timina/lmorales/Public/ymez/data/fastq/clean/XA096c3_unpaired1_clean.fastq.gz (single reads, library number: 2, library type: single)
+
+#es  el mismo error para las tres, parece que falta el archivo s1 y s2, está todo en uno. Asi que modificaré el sge para que solo use un archivo de unpaired reads
+
+nano XB077c1_spades.sge # modifico el parámetro anterior para c/sge
+nano XB007c9_spades.sge
+nano XA096c3_spades.sge 
+
+####
 
