@@ -1,0 +1,12 @@
+## Checo los genomas que ya fueron ensamblados y hago una lista de los que quisiera ensamblar
+
+./lavis
+
+cd /mnt/Timina/lmorales/Public/ymez
+sapas=$(cut -d , -f2 data/metadata/sapa104_SinClonas_From_sapa141.csv | grep -v ID)
+sapasam=$(for i in $sapas; do ls /mnt/Timina/lmorales/Public/ymez/data/assemblies | grep $i; done)
+
+# creo un dataframe con los 76 los genomas que falta ensamblar
+grep -vf <(printf "%s\n" "${sapasam[@]}") data/metadata/sapa104_SinClonas_From_sapa141.csv >> data/metadata/sapa76_ToAssam_from_sapa104.csv
+
+
