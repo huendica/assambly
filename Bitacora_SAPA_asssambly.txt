@@ -29,7 +29,7 @@ exit
 cd /mnt/Timina/lmorales/Public/ymez/bin/SGE/07_assemblies
 bash clopezg_SH_assembly.sh
 
-####
+#### Ene ste apartado los errores y como los resolví
 
 qstat | grep 2023 -c # hubo 3 de los 86 genomas que tuvieron un error
 
@@ -45,5 +45,71 @@ nano XB077c1_spades.sge # modifico el parámetro anterior para c/sge
 nano XB007c9_spades.sge
 nano XA096c3_spades.sge 
 
+# Resulta que muchos genomas no se pudieron ensamblar por diversos errores, el primero y que ocupa 36 de los genomas es que no existen los archivos unpaired1*
+
+cd /mnt/Timina/lmorales/Public/ymez/bin/SGE/07_assemblies/st
+
+for i in $(ls *.out | grep spades | grep clopezg); do echo $i >> spades_clopezg_errors_Jun2023.out; grep Error $i >> spades_clopezg_errors_Jun2023.out; done #archivo con los errores por genoma
+
+failed1=$(grep Error spades_clopezg_errors_Jun2023.out | grep "file not found" | cut -d " " -f8 | cut -d / -f10) # la lista de archivos que faltan
+
+failed1=$(grep Error spades_clopezg_errors_Jun2023.out | grep "file not found" | cut -d " " -f8 | cut -d / -f10 | sed 's/red1/red*/g') # modificada para hacer el grepq
+
+for i in $failed1; do ls $i; done | wc -l
+#36
+
+echo $failed1 | wc
+#      1      36    1253
+
+# ahora cambiaré esos parámetros en mis 36 sge
+
+IDs=$(cut -d "_" -f1 <(printf "%s\n" "${failed1[@]}"))
+
+for i in $IDs
+do
+sed -i -e '"s/${i}_unpaired2_clean.fastq.gz//g" -e 's/--s2 ${fq_dir}\///g' -e 's/red1/red/g' -e 's/--s1/-s/g' ${i}_spades.sge
+done
+
+# ahora veo los otros mensajes de error, hay tres cepas con alertas, pero no necesariamente errores
+
+grep -B 1 'Error correction and assembling warnings:' spades_clopezg_errors_Jun2023.out 
+SRR1868666_spades_clopezg.out
+=== Error correction and assembling warnings:
+--
+SRR1868728_spades_clopezg.out
+=== Error correction and assembling warnings:
+--
+SRR1868780_spades_clopezg.out
+=== Error correction and assembling warnings:
+
+# y hay dos con  err code: 255
+
+grep -B 1 'err code: 255' spades_clopezg_errors_Jun2023.out | grep -v 'file not found'
+YMX506F05_spades_clopezg.out
+== Error ==  system call for: "['/cm/shared/apps/spades/3.12.0/bin/spades-core', '/mnt/Timina/lmorales/Public/ymez/data/assemblies/YMX506F05/K21/configs/config.info']" finished abnormally, err code: 255
+--
+YMX506G12_spades_clopezg.out
+== Error ==  system call for: "['/cm/shared/apps/spades/3.12.0/bin/spades-core', '/mnt/Timina/lmorales/Public/ymez/data/assemblies/YMX506G12/K21/configs/config.info']" finished abnormally, err code: 255
+
 ####
+
+# Una vez resuelto el tema del archivo ausente haog un loop para subir a la cola los recién modificados archivos
+
+exit
+cd /mnt/Timina/lmorales/Public/ymez/bin/SGE/07_assemblies/
+
+#tengo que hacer las variables de nuevo
+
+for i in $IDs; do qsub ${i}_spades.sge; done
+
+## No está funcionando el for para eliminar el ID de la muestra con el enunciado unpaired2
+SRR4074413_unpaired2_clean.fastq.gz, me faltaban las comillas. Tiene que ser " " en vez de ' ' para que pueda entender la variable ${i} como variable y no como solo texto
+
+
+
+
+
+
+
+
 
