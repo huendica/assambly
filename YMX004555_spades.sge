@@ -1,0 +1,36 @@
+#!/bin/bash
+## Use current working directory (change working directory)
+#$ -cwd
+. /etc/profile.d/modules.sh
+##Error file 
+#$ -e /mnt/Timina/lmorales/Public/ymez/bin/SGE/07_assemblies/st/YMX004555_spades_clopezg.err
+## Out file 
+#$ -o /mnt/Timina/lmorales/Public/ymez/bin/SGE/07_assemblies/st/YMX004555_spades_clopezg.out
+#$ -S /bin/bash
+## Job's name 
+#$ -N assembly_YMX004555_spades
+#$ -l vf=2G
+#$ -pe openmp 8
+#$ -m e
+source /etc/bashrc
+## notification
+#$ -M herihuendica@gmail.com
+## Modules
+module load spades/3.12.0 
+###
+start=$(date +%s.%N)
+out_dir=/mnt/Timina/lmorales/Public/ymez/data/assemblies
+fq_dir=/mnt/Timina/lmorales/Public/ymez/data/fastq/clean
+tmp=/mnt/Timina/lmorales/Public/ymez/tmp/07_assemblies
+
+zcat ${fq_dir}/YMX004555_unpaired1_clean.fastq.gz ${fq_dir}/YMX004555_unpaired2_clean.fastq.gz > ${fq_dir}/YMX004555_unpaired_clean.fastq
+spades.py -k 21,33,55,77 --pe1-1 ${fq_dir}/YMX004555_R1_clean.fastq.gz --pe1-2 ${fq_dir}/YMX004555_R2_clean.fastq.gz --pe1-s ${fq_dir}/YMX004555_unpaired_clean.fastq -t 8 --tmp-dir ${tmp}/YMX004555  -o ${out_dir}/YMX004555
+
+if [[ -s ${out_dir}/YMX004555/contigs.fasta && -s ${out_dir}/YMX004555/scaffolds.fasta ]]; then
+rm -rf ${out_dir}/YMX004555/K21 ${out_dir}/YMX004555/K33 ${out_dir}/YMX004555/K55 ${out_dir}/YMX004555/K77 ${out_dir}/YMX004555/misc ${out_dir}/YMX004555/corrected
+rm -rf ${tmp}/YMX004555
+fi
+
+duration=$(echo "$(date +%s.%N) - $start" | bc)
+execution_time=`printf "%.2f seconds" $duration`
+echo "Script Execution Time: $execution_time"

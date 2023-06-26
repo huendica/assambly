@@ -3,7 +3,7 @@
 ./lavis
 
 cd /mnt/Timina/lmorales/Public/ymez
-sapas=$(cut -d , -f2 data/metadata/sapa104_SinClonas_From_sapa141.csv | grep -v ID)
+
 sapasam=$(for i in $sapas; do ls /mnt/Timina/lmorales/Public/ymez/data/assemblies | grep $i; done) #las que tienen ensamble
 
 # creo un dataframe con los 76 los genomas que falta ensamblar
@@ -49,7 +49,7 @@ nano XA096c3_spades.sge
 
 cd /mnt/Timina/lmorales/Public/ymez/bin/SGE/07_assemblies/st
 
-for i in $(ls *.out | grep spades | grep clopezg); do echo $i >> spades_clopezg_errors_Jun2023.out; grep Error $i >> spades_clopezg_errors_Jun2023.out; done #archivo con los errores por genoma
+for i in $(ls *.out | grep spades | grep clopezg); do echo "$i $(date)" | grep Error $i >> spades_clopezg_errors_Jun2023.out; done #archivo con los errores por genoma
 
 failed1=$(grep Error spades_clopezg_errors_Jun2023.out | grep "file not found" | cut -d " " -f8 | cut -d / -f10) # la lista de archivos que faltan
 
@@ -107,9 +107,26 @@ SRR4074413_unpaired2_clean.fastq.gz, me faltaban las comillas. Tiene que ser " "
 
 
 
+#Ahora checo si se ensamblaron todos los genomas
 
+cd /mnt/Timina/lmorales/Public/ymez/
+sapas=$(cut -d , -f2 data/metadata/sapa104_SinClonas_From_sapa141.csv | grep -v ID)
 
+cd /mnt/Timina/lmorales/Public/ymez/data/assemblies
+for i in $sapas ; do ls -lh ${i}/scaffolds.fasta; done 
 
+for i in $sapas ; do ls ${i}/scaffolds.fasta; done | wc -l
+ls: cannot access YMX004555/scaffolds.fasta: No such file or directory
+ls: cannot access YMX005582/scaffolds.fasta: No such file or directory
+ls: cannot access YMX506F01/scaffolds.fasta: No such file or directory
+ls: cannot access YMX506G12/scaffolds.fasta: No such file or directory
+ls: cannot access YMX506F05/scaffolds.fasta: No such file or directory
+99
 
+#5 archivos fallaron, de los cuales 2 fueron por el error 255, como describí previamente checaré porque falló el resto. el resto también falló por lo mismo, incluso cuando los corrió Tania.
+
+# Luis fer corrigió el script y ahor ahice un csv con los 5 genomas para correr el nuevo script de assambly
+
+nano /mnt/Timina/lmorales/Public/ymez/data/metadata/5sapa_assambly_clopezg.csv
 
 
